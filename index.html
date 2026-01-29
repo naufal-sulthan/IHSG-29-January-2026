@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisis Kondisi IHSG - Dashboard Awal Penelitian</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f5f4; /* Warm neutral background */
+            color: #1c1917;
+        }
+        
+        /* Custom Chart Container Styling */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 300px; /* Mobile default */
+            max-height: 400px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px; /* Tablet/Desktop */
+            }
+            .chart-container-sm {
+                height: 300px;
+            }
+        }
+
+        /* Utility for card hover effects */
+        .interactive-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
+        }
+        .interactive-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .card-active {
+            border-left: 4px solid #0ea5e9;
+            background-color: #f0f9ff;
+        }
+
+        /* Hide scrollbar for clean horizontal scrolling */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+    <!-- Chosen Palette: Warm Neutrals (Stone) + Professional Blue/Green/Red for Finance -->
+    <!-- Application Structure Plan:
+         1. Hero Section: Immediate 'Market Pulse' stats to ground the researcher.
+         2. Trend Analysis (Main Chart): The core quantitative view. Toggles (1W, 1M, 1Y) allow researchers to identify short vs long term trends.
+         3. Sectoral Breakdown (Interaction): Combining quantitative (Bar chart) with qualitative (Text). Clicking a bar updates the text, allowing users to "drill down" into sector-specific research notes without page reloads.
+         4. Micro Analysis (Tables): Top Gainers/Losers to identify volatility anomalies.
+         5. Methodology Footer: Contextualizes the data within a research framework.
+    -->
+    <!-- Visualization & Content Choices:
+         - Line Chart (Chart.js): Best for showing IHSG trends over time. Interaction: Timeframe filtering.
+         - Bar Chart (Chart.js): Comparison of sector performance. Interaction: Click events drive text content updates.
+         - Dynamic HTML Tables: For listing specific stock details (Top Movers). Interaction: Sorting/Toggling datasets.
+         - Cards: Key Macro indicators.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+</head>
+<body class="antialiased text-stone-800">
+
+    <!-- Navigation / Header -->
+    <nav class="bg-white border-b border-stone-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3">
+                    <span class="text-2xl font-bold tracking-tight text-stone-900">IHSG<span class="text-blue-600">Research</span></span>
+                    <span class="hidden sm:block text-sm text-stone-500 bg-stone-100 px-2 py-1 rounded">Pre-Research Phase</span>
+                </div>
+                <div class="text-sm font-medium text-stone-500">
+                    Data Terakhir: <span id="current-date"></span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- Section 1: Introduction & Context -->
+        <section class="bg-white rounded-xl p-6 shadow-sm border border-stone-100">
+            <h1 class="text-2xl font-semibold text-stone-900 mb-2">Latar Belakang Penelitian</h1>
+            <p class="text-stone-600 leading-relaxed">
+                Dashboard ini menyajikan analisis awal kondisi Indeks Harga Saham Gabungan (IHSG) sebagai landasan data untuk proposal penelitian. 
+                Fokus utama adalah mengidentifikasi korelasi antara volatilitas pasar saat ini dengan faktor eksternal (makroekonomi) dan internal (kinerja sektoral).
+                Gunakan alat interaktif di bawah ini untuk mengeksplorasi tren dan anomali data.
+            </p>
+        </section>
+
+        <!-- Section 2: Key Metrics (Live Pulse) -->
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Card 1 -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-stone-100 flex flex-col justify-between">
+                <span class="text-sm text-stone-500 font-medium">Nilai IHSG Saat Ini</span>
+                <div class="flex items-end gap-2 mt-2">
+                    <span class="text-3xl font-bold text-stone-900">7.321,54</span>
+                    <span class="text-sm font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded mb-1">▲ 0.45%</span>
+                </div>
+                <span class="text-xs text-stone-400 mt-2">Update sesi penutupan</span>
+            </div>
+            <!-- Card 2 -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-stone-100 flex flex-col justify-between">
+                <span class="text-sm text-stone-500 font-medium">Volume Perdagangan</span>
+                <div class="flex items-end gap-2 mt-2">
+                    <span class="text-3xl font-bold text-stone-900">18.4 B</span>
+                    <span class="text-sm text-stone-500 mb-1">Lembar</span>
+                </div>
+                <span class="text-xs text-stone-400 mt-2">Rata-rata harian: 16.2 B</span>
+            </div>
+            <!-- Card 3 -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-stone-100 flex flex-col justify-between">
+                <span class="text-sm text-stone-500 font-medium">Nilai Transaksi</span>
+                <div class="flex items-end gap-2 mt-2">
+                    <span class="text-3xl font-bold text-stone-900">Rp 10.2 T</span>
+                </div>
+                <span class="text-xs text-stone-400 mt-2">Turnover harian</span>
+            </div>
+            <!-- Card 4 -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-stone-100 flex flex-col justify-between">
+                <span class="text-sm text-stone-500 font-medium">Asing Net Buy/Sell</span>
+                <div class="flex items-end gap-2 mt-2">
+                    <span class="text-3xl font-bold text-red-600">-450 M</span>
+                    <span class="text-sm text-stone-500 mb-1">IDR</span>
+                </div>
+                <span class="text-xs text-stone-400 mt-2">Outflow dominan di Big Caps</span>
+            </div>
+        </section>
+
+        <!-- Section 3: Trend Analysis (Main Chart) -->
+        <section class="bg-white rounded-xl shadow-sm border border-stone-100 overflow-hidden">
+            <div class="p-6 border-b border-stone-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-stone-900">Analisis Tren Historis</h2>
+                    <p class="text-sm text-stone-500">Pergerakan indeks dalam berbagai rentang waktu untuk identifikasi pola.</p>
+                </div>
+                <div class="flex bg-stone-100 p-1 rounded-lg">
+                    <button onclick="updateTimeframe('1M')" class="time-filter px-4 py-1.5 text-sm font-medium rounded-md text-stone-600 hover:text-stone-900 transition-colors" data-period="1M">1 Bulan</button>
+                    <button onclick="updateTimeframe('3M')" class="time-filter px-4 py-1.5 text-sm font-medium rounded-md text-stone-600 hover:text-stone-900 transition-colors" data-period="3M">3 Bulan</button>
+                    <button onclick="updateTimeframe('YTD')" class="time-filter px-4 py-1.5 text-sm font-medium rounded-md bg-white shadow-sm text-blue-600" data-period="YTD">YTD</button>
+                    <button onclick="updateTimeframe('1Y')" class="time-filter px-4 py-1.5 text-sm font-medium rounded-md text-stone-600 hover:text-stone-900 transition-colors" data-period="1Y">1 Tahun</button>
+                </div>
+            </div>
+            <div class="p-6">
+                <!-- Chart Container -->
+                <div class="chart-container">
+                    <canvas id="ihsgTrendChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Sectoral Deep Dive (Interactive Split View) -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left: Chart -->
+            <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-stone-100 p-6">
+                <div class="mb-6">
+                    <h2 class="text-lg font-bold text-stone-900">Kinerja Sektoral</h2>
+                    <p class="text-sm text-stone-500">Klik pada batang grafik untuk melihat analisis detail dan hipotesis penelitian per sektor.</p>
+                </div>
+                <div class="chart-container chart-container-sm">
+                    <canvas id="sectorChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Right: Dynamic Analysis Panel -->
+            <div class="lg:col-span-1 bg-stone-50 rounded-xl border border-stone-200 p-6 flex flex-col">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="w-2 h-6 bg-blue-600 rounded-sm"></span>
+                    <h3 class="text-lg font-bold text-stone-900" id="sector-title">Sektor Keuangan</h3>
+                </div>
+                
+                <div class="flex-grow space-y-4">
+                    <div>
+                        <span class="text-xs font-semibold text-stone-400 uppercase tracking-wider">Kondisi Saat Ini</span>
+                        <p class="text-stone-700 mt-1 text-sm leading-relaxed" id="sector-desc">
+                            Sektor keuangan menjadi penopang utama IHSG. Laporan keuangan Q3 menunjukkan pertumbuhan kredit yang solid meskipun suku bunga tinggi.
+                        </p>
+                    </div>
+                    <div>
+                        <span class="text-xs font-semibold text-stone-400 uppercase tracking-wider">Fokus Penelitian</span>
+                        <p class="text-stone-700 mt-1 text-sm leading-relaxed" id="sector-research">
+                            Analisis dampak *Net Interest Margin* (NIM) terhadap harga saham perbankan BUKU 4 di tengah volatilitas nilai tukar.
+                        </p>
+                    </div>
+                    <div class="pt-4 border-t border-stone-200">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-stone-500">Perubahan YTD:</span>
+                            <span class="font-bold text-green-600" id="sector-stat">+12.4%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Top Movers & Macro Context -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- Top Movers Table -->
+            <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-stone-100 flex flex-col">
+                <div class="p-6 border-b border-stone-100 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-stone-900">Penggerak Pasar</h2>
+                    <div class="flex bg-stone-100 p-1 rounded-lg">
+                        <button onclick="toggleMovers('gainers')" id="btn-gainers" class="px-3 py-1 text-sm font-medium rounded-md bg-white shadow-sm text-green-700">Top Gainers</button>
+                        <button onclick="toggleMovers('losers')" id="btn-losers" class="px-3 py-1 text-sm font-medium rounded-md text-stone-500 hover:text-stone-900">Top Losers</button>
+                    </div>
+                </div>
+                <div class="p-0 overflow-x-auto no-scrollbar">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="text-xs text-stone-500 border-b border-stone-100 bg-stone-50">
+                                <th class="px-6 py-3 font-medium">Kode Saham</th>
+                                <th class="px-6 py-3 font-medium">Nama Perusahaan</th>
+                                <th class="px-6 py-3 font-medium">Harga (Rp)</th>
+                                <th class="px-6 py-3 font-medium text-right">Perubahan (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="movers-table-body" class="text-sm">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Macro Indicators -->
+            <div class="space-y-4">
+                <div class="bg-white p-5 rounded-xl shadow-sm border border-stone-100">
+                    <h3 class="text-stone-500 text-sm font-medium mb-3">Indikator Makro Ekonomi</h3>
+                    
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center pb-2 border-b border-stone-100">
+                            <div>
+                                <div class="text-stone-900 font-bold">BI Rate</div>
+                                <div class="text-xs text-stone-400">Suku Bunga Acuan</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-mono text-lg text-stone-800">6.00%</div>
+                                <div class="text-xs text-stone-400">Stabil</div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center pb-2 border-b border-stone-100">
+                            <div>
+                                <div class="text-stone-900 font-bold">Inflasi (YoY)</div>
+                                <div class="text-xs text-stone-400">Indeks Harga Konsumen</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-mono text-lg text-stone-800">2.61%</div>
+                                <div class="text-xs text-green-600">▼ Terkendali</div>
+                            </div>
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <div class="text-stone-900 font-bold">USD/IDR</div>
+                                <div class="text-xs text-stone-400">Kurs Tengah BI</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-mono text-lg text-stone-800">15.850</div>
+                                <div class="text-xs text-red-600">▲ Melemah</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-blue-50 p-5 rounded-xl border border-blue-100">
+                    <h3 class="text-blue-900 font-bold mb-2">💡 Ide Penelitian</h3>
+                    <p class="text-sm text-blue-800 leading-snug">
+                        Korelasi negatif antara pelemahan Rupiah dan performa saham sektor *Consumer Goods* (yang bergantung pada bahan baku impor) bisa menjadi topik tesis yang relevan saat ini.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-stone-900 text-stone-400 py-8 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h4 class="text-white font-bold mb-4">Metodologi Data</h4>
+                    <p class="text-sm mb-2">Data disimulasikan berdasarkan pola pasar riil terkini untuk keperluan demonstrasi struktur penelitian.</p>
+                    <p class="text-sm">Analisis teknikal menggunakan rata-rata pergerakan (MA) dan analisis fundamental berbasis laporan kuartal terakhir emiten.</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm">Dibuat untuk keperluan analisis akademis.</p>
+                    <p class="text-xs mt-2 opacity-50">&copy; 2024 Research Dashboard Project.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- DATA MOCKUPS ---
+
+        // 1. Sector Data
+        const sectorData = {
+            labels: ['Keuangan', 'Infrastruktur', 'Energi', 'Teknologi', 'Konsumen', 'Properti'],
+            data: [12.4, 5.2, -3.1, -8.5, 2.1, 0.5],
+            details: {
+                'Keuangan': {
+                    desc: 'Sektor keuangan menjadi penopang utama IHSG. Laporan keuangan Q3 menunjukkan pertumbuhan kredit yang solid meskipun suku bunga tinggi.',
+                    research: 'Analisis dampak Net Interest Margin (NIM) terhadap harga saham perbankan BUKU 4.',
+                    stat: '+12.4%'
+                },
+                'Infrastruktur': {
+                    desc: 'Didorong oleh emiten telekomunikasi dan proyek strategis nasional yang berlanjut. Sentimen positif dari pembangunan IKN.',
+                    research: 'Evaluasi efisiensi capex emiten telekomunikasi terhadap pertumbuhan pendapatan data.',
+                    stat: '+5.2%'
+                },
+                'Energi': {
+                    desc: 'Terkoreksi akibat normalisasi harga komoditas (batubara & minyak) global setelah lonjakan tahun lalu.',
+                    research: 'Pengaruh fluktuasi harga batubara Newcastle terhadap kinerja emiten pertambangan energi.',
+                    stat: '-3.1%'
+                },
+                'Teknologi': {
+                    desc: 'Sektor paling tertekan akibat era suku bunga tinggi ("higher for longer"), mengurangi valuasi saham teknologi.',
+                    research: 'Analisis jalur menuju profitabilitas (path to profitability) emiten teknologi pasca-IPO.',
+                    stat: '-8.5%'
+                },
+                'Konsumen': {
+                    desc: 'Defensif namun tumbuh moderat. Daya beli masyarakat kelas menengah menjadi tantangan utama.',
+                    research: 'Elastisitas permintaan produk FMCG terhadap kenaikan inflasi pangan.',
+                    stat: '+2.1%'
+                },
+                'Properti': {
+                    desc: 'Stagnan. Insentif PPN DTP pemerintah membantu penjualan, namun suku bunga KPR tinggi menjadi penghambat.',
+                    research: 'Efektivitas insentif fiskal pemerintah terhadap angka marketing sales emiten properti.',
+                    stat: '+0.5%'
+                }
+            }
+        };
+
+        // 2. Trend Data (Simulated for interactions)
+        const trendData = {
+            '1M': {
+                labels: Array.from({length: 30}, (_, i) => `Hari ${i+1}`),
+                data: Array.from({length: 30}, () => 7200 + Math.random() * 100 - 50)
+            },
+            '3M': {
+                labels: ['Minggu 1', 'Minggu 2', 'Minggu 3', 'Minggu 4', 'Minggu 5', 'Minggu 6', 'Minggu 7', 'Minggu 8', 'Minggu 9', 'Minggu 10', 'Minggu 11', 'Minggu 12'],
+                data: [7100, 7150, 7120, 7180, 7250, 7300, 7280, 7320, 7350, 7310, 7290, 7321]
+            },
+            'YTD': {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt'],
+                data: [7270, 7300, 7350, 7200, 7100, 6900, 7050, 7200, 7250, 7321]
+            },
+            '1Y': {
+                labels: ['Okt 23', 'Nov', 'Des', 'Jan 24', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt 24'],
+                data: [6800, 6950, 7100, 7270, 7300, 7350, 7200, 7100, 6900, 7050, 7200, 7250, 7321]
+            }
+        };
+
+        // 3. Movers Data
+        const moversData = {
+            gainers: [
+                { code: 'BREN', name: 'Barito Renewables Energy', price: 7800, change: 12.5 },
+                { code: 'AMMN', name: 'Amman Mineral', price: 6450, change: 8.2 },
+                { code: 'BBCA', name: 'Bank Central Asia', price: 10200, change: 2.1 },
+                { code: 'ASII', name: 'Astra International', price: 5600, change: 1.8 },
+                { code: 'TLKM', name: 'Telkom Indonesia', price: 3400, change: 1.2 }
+            ],
+            losers: [
+                { code: 'GOTO', name: 'GoTo Gojek Tokopedia', price: 62, change: -4.6 },
+                { code: 'PGEO', name: 'Pertamina Geothermal', price: 1120, change: -3.4 },
+                { code: 'UNVR', name: 'Unilever Indonesia', price: 2800, change: -2.1 },
+                { code: 'ADRO', name: 'Adaro Energy', price: 2450, change: -1.5 },
+                { code: 'MDKA', name: 'Merdeka Copper Gold', price: 2300, change: -1.2 }
+            ]
+        };
+
+        // --- CHART INITIALIZATION ---
+
+        // 1. IHSG Trend Chart
+        const ctxTrend = document.getElementById('ihsgTrendChart').getContext('2d');
+        let trendChart = new Chart(ctxTrend, {
+            type: 'line',
+            data: {
+                labels: trendData['YTD'].labels,
+                datasets: [{
+                    label: 'IHSG (Composite Index)',
+                    data: trendData['YTD'].data,
+                    borderColor: '#0ea5e9', // Blue-500
+                    backgroundColor: 'rgba(14, 165, 233, 0.1)',
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointHoverRadius: 6,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `Value: ${context.parsed.y}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { maxRotation: 0, autoSkip: true }
+                    },
+                    y: {
+                        grid: { color: '#f5f5f4' },
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+
+        // 2. Sector Chart
+        const ctxSector = document.getElementById('sectorChart').getContext('2d');
+        let sectorChart = new Chart(ctxSector, {
+            type: 'bar',
+            data: {
+                labels: sectorData.labels,
+                datasets: [{
+                    label: 'Perubahan YTD (%)',
+                    data: sectorData.data,
+                    backgroundColor: (context) => {
+                        const val = context.raw;
+                        return val >= 0 ? '#22c55e' : '#ef4444'; // Green if positive, Red if negative
+                    },
+                    borderRadius: 4,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                onClick: (e, activeElements) => {
+                    if (activeElements.length > 0) {
+                        const index = activeElements[0].index;
+                        const sectorName = sectorData.labels[index];
+                        updateSectorDetails(sectorName);
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => `${context.parsed.y}%`
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        grid: { color: '#f5f5f4' },
+                        ticks: {
+                            callback: function(value) { return value + "%" }
+                        }
+                    },
+                    x: {
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // --- INTERACTION FUNCTIONS ---
+
+        // Update Trend Chart Timeframe
+        function updateTimeframe(period) {
+            // Update UI buttons
+            document.querySelectorAll('.time-filter').forEach(btn => {
+                if(btn.dataset.period === period) {
+                    btn.classList.remove('bg-white', 'text-stone-600', 'shadow-none');
+                    btn.classList.add('bg-white', 'shadow-sm', 'text-blue-600');
+                } else {
+                    btn.classList.add('text-stone-600');
+                    btn.classList.remove('bg-white', 'shadow-sm', 'text-blue-600');
+                }
+            });
+
+            // Update Chart Data
+            trendChart.data.labels = trendData[period].labels;
+            trendChart.data.datasets[0].data = trendData[period].data;
+            trendChart.update();
+        }
+
+        // Update Sector Details Panel
+        function updateSectorDetails(sectorName) {
+            const data = sectorData.details[sectorName];
+            if (!data) return;
+
+            // Animate transition
+            const panel = document.getElementById('sector-desc').parentElement.parentElement;
+            panel.style.opacity = '0.5';
+            
+            setTimeout(() => {
+                document.getElementById('sector-title').innerText = `Sektor ${sectorName}`;
+                document.getElementById('sector-desc').innerText = data.desc;
+                document.getElementById('sector-research').innerText = data.research;
+                
+                const statElem = document.getElementById('sector-stat');
+                statElem.innerText = data.stat;
+                
+                if(data.stat.includes('-')) {
+                    statElem.classList.remove('text-green-600');
+                    statElem.classList.add('text-red-600');
+                } else {
+                    statElem.classList.remove('text-red-600');
+                    statElem.classList.add('text-green-600');
+                }
+                
+                panel.style.opacity = '1';
+            }, 200);
+        }
+
+        // Toggle Top Movers Table
+        function toggleMovers(type) {
+            const btnGainers = document.getElementById('btn-gainers');
+            const btnLosers = document.getElementById('btn-losers');
+            const tbody = document.getElementById('movers-table-body');
+
+            // Style buttons
+            if (type === 'gainers') {
+                btnGainers.classList.add('bg-white', 'shadow-sm', 'text-green-700');
+                btnGainers.classList.remove('text-stone-500');
+                btnLosers.classList.remove('bg-white', 'shadow-sm', 'text-red-700');
+                btnLosers.classList.add('text-stone-500');
+            } else {
+                btnLosers.classList.add('bg-white', 'shadow-sm', 'text-red-700');
+                btnLosers.classList.remove('text-stone-500');
+                btnGainers.classList.remove('bg-white', 'shadow-sm', 'text-green-700');
+                btnGainers.classList.add('text-stone-500');
+            }
+
+            // Populate Table
+            tbody.innerHTML = '';
+            moversData[type].forEach(stock => {
+                const changeColor = stock.change >= 0 ? 'text-green-600' : 'text-red-600';
+                const row = `
+                    <tr class="border-b border-stone-50 hover:bg-stone-50 transition-colors">
+                        <td class="px-6 py-4 font-semibold text-stone-900">${stock.code}</td>
+                        <td class="px-6 py-4 text-stone-600">${stock.name}</td>
+                        <td class="px-6 py-4 text-stone-900">Rp ${stock.price.toLocaleString('id-ID')}</td>
+                        <td class="px-6 py-4 text-right font-bold ${changeColor}">${stock.change}%</td>
+                    </tr>
+                `;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+
+        // Initialize Date
+        document.getElementById('current-date').innerText = new Date().toLocaleDateString('id-ID', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        });
+
+        // Load Default Movers
+        toggleMovers('gainers');
+
+    </script>
+</body>
+</html>
